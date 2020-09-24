@@ -95,7 +95,7 @@ def card_addition_view(request):
                 return redirect("index")
             else:
                 context['error'] = 'Card belongs to someone else'
-    else:
+    elif len(code) > 0:
         context['error'] = 'Invalid Card'
 
     return render(request, 'libraryaccess/cardScan.html', context)
@@ -117,7 +117,7 @@ def card_login_view(request):
                 user = Student.objects.get(cardUID = code)
                 login(request, user)
                 return redirect("index")
-        else:
+        elif len(code) > 0:
             context['error'] = 'Invalid Card'
 
     return render(request, 'libraryaccess/cardScan.html', context)

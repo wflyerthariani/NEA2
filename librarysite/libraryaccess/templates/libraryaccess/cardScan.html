@@ -4,7 +4,10 @@
 <form method="POST" id="cardScanForm">
   {% csrf_token %}
   <input type="hidden" name="cardScan" id="cardScan">
+  <p style="color: red;">{{error}}</p>
 </form>
+{% endblock content %}
+{% block headContent %}
 <script>
   /*
    * onScan.js - scan-events for hardware barcodes scanners in javascript
@@ -546,6 +549,5 @@ onScan.attachTo(document, {
     //}
 });
 </script>
-<p style="color: red;">{{error}}</p>
 
-{% endblock content %}
+{% endblock headContent %}
