@@ -61,6 +61,8 @@ class Book(models.Model):
     location                = models.CharField(verbose_name='code', max_length=10, null = True, blank = True)
     bookAuthor              = models.ManyToManyField(Author)
     bookGenre               = models.ManyToManyField(Genre)
+    inLibrary               = models.BooleanField(default=True)
+
 
     def __str__(self):
         return(self.title)
