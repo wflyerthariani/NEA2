@@ -11,4 +11,5 @@ urlpatterns = [
     path('mycard/', views.card_addition_view, name='cardAddition'),
     path('cardlogin/', views.card_login_view, name='cardLogin'),
     #path('dataadd/', views.load_data, name='dataadd'),#
+    path('book_view/<str:isbn>/', views.book_view, name='bookDetails')
 ]

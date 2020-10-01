@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from libraryaccess.forms import RegistrationForm, AccountAuthenticationForm, AccountUpdateForm
@@ -144,3 +144,9 @@ def load_data(request):
                     newbook.save()
 
     return render(request, 'libraryaccess/dataadd.html', context)
+
+def book_view(request, isbn):
+    context = {}
+    book = get_object_or_404(Book, ISBN=str(isbn))
+    context['title'] = book.title
+    return render(request, 'libraryaccess/bookview.html', context)

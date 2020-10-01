@@ -9,9 +9,6 @@
 {% endblock content %}
 {% block headContent %}
 <script>
-  /*
-   * onScan.js - scan-events for hardware barcodes scanners in javascript
-   */
   ;(function (global, factory) {
       typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
       typeof define === 'function' && define.amd ? define(factory()) :
@@ -19,12 +16,6 @@
   }(this, (function () {
   	var onScan = {
 
-  		/**
-  		 *
-  		 * @param DomElement oDomElement
-  		 * @param Object oOptions
-  		 * @return self
-  		 */
   		attachTo: function(oDomElement, oOptions) {
 
   			if(oDomElement.scannerDetectionData !== undefined){
@@ -84,11 +75,6 @@
   			return this;
   		},
 
-  		/**
-  		 *
-  		 * @param DomElement oDomElement
-  		 * @return void
-  		 */
   		detachFrom: function(oDomElement) {
   			// detaching all used events
   			if (oDomElement.scannerDetectionData.options.reactToPaste){
@@ -104,21 +90,10 @@
   			return;
   		},
 
-  		/**
-  		 *
-  		 * @param DomElement oDomElement
-  		 * @return Object
-  		 */
   		getOptions: function(oDomElement){
   			return oDomElement.scannerDetectionData.options;
   		},
 
-  		/**
-  		 *
-  		 * @param DomElement oDomElement
-  		 * @param Object oOptions
-  		 * @return self
-  		 */
   		setOptions: function(oDomElement, oOptions){
   			// check if some handlers need to be changed based on possible option changes
   			switch (oDomElement.scannerDetectionData.options.reactToPaste){
@@ -155,24 +130,6 @@
   			return this;
   		},
 
-  		/**
-  		 * Transforms key codes into characters.
-  		 *
-  		 * By default, only the follwing key codes are taken into account
-  		 * - 48-90 (letters and regular numbers)
-  		 * - 96-105 (numeric keypad numbers)
-  		 * - 106-111 (numeric keypad operations)
-  		 *
-  		 * All other keys will yield empty strings!
-  		 *
-  		 * The above keycodes will be decoded using the KeyboardEvent.key property on modern
-  		 * browsers. On older browsers the method will fall back to String.fromCharCode()
-  		 * putting the result to upper/lower case depending on KeyboardEvent.shiftKey if
-  		 * it is set.
-  		 *
-  		 * @param KeyboardEvent oEvent
-  		 * @return string
-  		 */
   		decodeKeyEvent : function (oEvent) {
   			var iCode = this._getNormalizedKeyNum(oEvent);
   			switch (true) {
@@ -194,22 +151,6 @@
   			return '';
   		},
 
-  		/**
-  		 * Simulates a scan of the provided code.
-  	     *
-  		 * The scan code can be defined as
-  		 * - a string - in this case no keyCode decoding is done and the code is merely validated
-  		 * against constraints like minLenght, etc.
-  		 * - an array of keyCodes (e.g. `[70,71,80]`) - will produce `keydown` events with corresponding
-  		 * `keyCode` properties. NOTE: these events will have empty `key` properties, so decoding may
-  		 * yield different results than with native events.
-  		 * - an array of objects (e.g. `[{keyCode: 70, key: "F", shiftKey: true}, {keyCode: 71, key: "g"}]`) -
-  		 * this way almost any event can be simulated, but it's a lot of work to do.
-  		 *
-  		 * @param DomElement oDomElement
-  		 * @param string|array mStringOrArray
-  		 * @return self
-  		 */
   		simulate: function(oDomElement, mStringOrArray){
   			this._reinitialize(oDomElement);
   			if (Array.isArray(mStringOrArray)){
@@ -229,24 +170,6 @@
   			return this;
   		},
 
-  		/**
-  		 * @private
-  		 * @param DomElement oDomElement
-  		 * @return void
-  		 */
-  		_reinitialize: function(oDomElement){
-  			var oVars = oDomElement.scannerDetectionData.vars;
-  			oVars.firstCharTime = 0;
-  			oVars.lastCharTime = 0;
-  			oVars.accumulatedString = '';
-  			return;
-  		},
-
-  		/**
-  		 * @private
-  		 * @param DomElement oDomElement
-  	     * @return boolean
-  		 */
   		_isFocusOnIgnoredElement: function(oDomElement){
 
   			var ignoreSelectors = oDomElement.scannerDetectionData.options.ignoreIfFocusOn;
@@ -273,13 +196,6 @@
   		    return false;
   	    },
 
-  	    /**
-  	     * Validates the scan code accumulated by the given DOM element and fires the respective events.
-  	     *
-  	     * @private
-  	     * @param DomElement oDomElement
-  	     * @return boolean
-  	     */
   		_validateScanCode: function(oDomElement, sScanCode){
   			var oScannerData = oDomElement.scannerDetectionData;
   			var oOptions = oScannerData.options;
@@ -340,12 +256,6 @@
   			return false;
   	    },
 
-  	    /**
-  	     * @private
-  	     * @param Object oDefaults
-  	     * @param Object oOptions
-  	     * @return Object
-  	     */
   		_mergeOptions: function(oDefaults, oOptions){
   			var oExtended = {};
   			var prop;
@@ -362,22 +272,10 @@
   			return oExtended;
   		},
 
-  		/**
-  		 * @private
-  		 * @param KeyboardEvent e
-  		 * @return int
-  		 * @see https://www.w3schools.com/jsref/event_key_keycode.asp
-  		 */
   		_getNormalizedKeyNum: function(e){
   			return e.which || e.keyCode;
   		},
 
-
-  		/**
-  		 * @private
-  		 * @param KeyboardEvent e
-  		 * @return void
-  		 */
   		_handleKeyDown: function(e){
   			var iKeyCode = onScan._getNormalizedKeyNum(e);
   			var oOptions = this.scannerDetectionData.options;
@@ -459,11 +357,6 @@
   			return;
   		},
 
-  		/**
-  		 * @private
-  		 * @param Event e
-  		 * @return void
-  		 */
   		_handlePaste: function(e){
 
   			var oOptions = this.scannerDetectionData.options;
@@ -491,11 +384,6 @@
   			return;
   		},
 
-  		/**
-  		 * @private
-  		 * @param KeyboardEvent e
-  		 * @return void
-  		 */
   		_handleKeyUp: function(e){
   			// if the focus is on an ignored element, abort
   			if (onScan._isFocusOnIgnoredElement(this)){
@@ -512,22 +400,10 @@
   			return;
   		},
 
-  		/**
-  		 * Returns TRUE if the scanner is currently in the middle of a scan sequence.
-  		 *
-  		 * @param DomElement
-  		 * @return boolean
-  		 */
   		isScanInProgressFor: function(oDomElement) {
   			return oDomElement.scannerDetectionData.vars.firstCharTime > 0;
   		},
 
-  		/**
-  		 * Returns TRUE if onScan is attached to the given DOM element and FALSE otherwise.
-  		 *
-  		 * @param DomElement
-  		 * @return boolean
-  		 */
   		isAttachedTo: function(oDomElement) {
   			return (oDomElement.scannerDetectionData !== undefined);
   		}
