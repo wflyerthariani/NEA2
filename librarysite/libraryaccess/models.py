@@ -43,7 +43,7 @@ class Author(models.Model):
     surname                 = models.CharField(verbose_name='surname', max_length=30)
 
     def __str__(self):
-        return(self.surname)
+        return(self.forename+' '+self.surname)
 
 class Genre(models.Model):
     name                    = models.CharField(verbose_name='name', max_length=50)

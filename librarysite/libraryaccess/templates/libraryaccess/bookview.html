@@ -1,5 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<img src={{imagelink}}>
 <h2>{{title}}</h2>
+<p>{{description}}</p>
+<p>{{author}}</p>
+<p>Genres: {{genre}}</p>
+{% if in_library == 1 %}
+  <p>The book is in the library</p>
+  <p>Location: {{location}}</p>
+{% else %}
+  <p>The book is not in the library</p>
+{% endif %}
+<p>Published by {{publisher}} in {{publish_year}}</p>
 {% endblock content %}

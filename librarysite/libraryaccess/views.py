@@ -4,6 +4,10 @@ from django.contrib.auth import login, authenticate, logout
 from libraryaccess.forms import RegistrationForm, AccountAuthenticationForm, AccountUpdateForm
 from libraryaccess.models import Student, Author, Genre, Book
 import csv
+from bs4 import BeautifulSoup
+import requests
+import json
+from libraryaccess.get_image_from_isbn import get_imagelink
 
 def index(request):
     context = {}
@@ -147,6 +151,23 @@ def load_data(request):
 
 def book_view(request, isbn):
     context = {}
+
+    if request.user.is_authenticated:
+        context['authenticated'] = True
+    else:
+        context['authenticated'] = False
+
     book = get_object_or_404(Book, ISBN=str(isbn))
     context['title'] = book.title
+    context['description'] = book.description
+    context['author'] = ', '.join([book.bookAuthor.all()[i].forename+' '+book.bookAuthor.all()[i].surname for i in range(len(book.bookAuthor.all()))])
+    try:
+        context['imagelink'] = get_imagelink(isbn)
+    except:
+        context['imagelink'] = None
+    context['location'] = book.location
+    context['in_library'] = book.inLibrary
+    context['publisher'] = book.publisher
+    context['publish_year'] = book.publishDate
+    context['genre'] = ', '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))])
     return render(request, 'libraryaccess/bookview.html', context)
