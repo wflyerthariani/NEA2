@@ -151,13 +151,26 @@ def load_data(request):
 
 def book_view(request, isbn):
     context = {}
+    book = get_object_or_404(Book, ISBN=str(isbn))
 
     if request.user.is_authenticated:
         context['authenticated'] = True
+        if book in request.user.studentBook.all():
+            context['added'] = 'added'
+        else:
+            if request.POST:
+                if request.POST.get("added", "") == 'add':
+                    request.user.studentBook.add(book)
+                    context['added'] = 'added'
+                else:
+                    context['added'] = 'addable'
+            else:
+                context['added'] = 'addable'
+
     else:
         context['authenticated'] = False
+        context['added'] = 'unaddable'
 
-    book = get_object_or_404(Book, ISBN=str(isbn))
     context['title'] = book.title
     context['description'] = book.description
     context['author'] = ', '.join([book.bookAuthor.all()[i].forename+' '+book.bookAuthor.all()[i].surname for i in range(len(book.bookAuthor.all()))])

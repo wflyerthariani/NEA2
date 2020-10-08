@@ -13,4 +13,15 @@
   <p>The book is not in the library</p>
 {% endif %}
 <p>Published by {{publisher}} in {{publish_year}}</p>
+{% if added == 'addable' %}
+  <form method='POST' id='added'>
+    {% csrf_token %}
+    <input type="submit" value="add" name="added">
+  </form>
+{% elif added == 'added' %}
+  <form method='POST' id='added'>
+    {% csrf_token %}
+    <input type="submit" value="added" name="added" disabled>
+  </form>
+{% endif %}
 {% endblock content %}
