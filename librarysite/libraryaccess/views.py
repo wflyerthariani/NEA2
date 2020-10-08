@@ -174,7 +174,7 @@ def book_view(request, isbn):
 
     context['title'] = book.title
     context['description'] = book.description
-    context['author'] = ', '.join([book.bookAuthor.all()[i].forename+' '+book.bookAuthor.all()[i].surname for i in range(len(book.bookAuthor.all()))])
+    context['author'] = book.all_authors
     try:
         context['imagelink'] = get_imagelink(isbn)
     except:

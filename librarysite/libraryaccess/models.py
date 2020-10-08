@@ -63,9 +63,12 @@ class Book(models.Model):
     bookGenre               = models.ManyToManyField(Genre)
     inLibrary               = models.BooleanField(default=True)
 
-
     def __str__(self):
         return(self.title)
+
+    @property
+    def all_authors(self):
+        return ', '.join([self.bookAuthor.all()[i].forename+' '+self.bookAuthor.all()[i].surname for i in range(len(self.bookAuthor.all()))])
 
 
 class Student(AbstractBaseUser):
