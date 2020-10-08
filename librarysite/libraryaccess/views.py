@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from libraryaccess.get_image_from_isbn import get_imagelink
+from libraryaccess.tables import BookTable
 
 def index(request):
     context = {}
@@ -184,3 +185,14 @@ def book_view(request, isbn):
     context['publish_year'] = book.publishDate
     context['genre'] = ', '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))])
     return render(request, 'libraryaccess/bookview.html', context)
+
+
+def books_read_view(request):
+    if request.user.is_authenticated:
+        table = BookTable(request.user.studentBook.all())
+    else:
+        return redirect("login")
+
+    return render(request, "libraryaccess/mybooks_list.html", {
+        "table": table
+    })
