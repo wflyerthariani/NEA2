@@ -183,7 +183,7 @@ def book_view(request, isbn):
     context['in_library'] = book.inLibrary
     context['publisher'] = book.publisher
     context['publish_year'] = book.publishDate
-    context['genre'] = ', '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))])
+    context['genre'] = book.all_genres
     return render(request, 'libraryaccess/bookview.html', context)
 
 
@@ -196,3 +196,45 @@ def books_read_view(request):
     return render(request, "libraryaccess/mybooks_list.html", {
         "table": table
     })
+
+def book_search(request):
+    context = {}
+    if request.POST:
+        isbn = request.POST.get("ISBN", "")
+        Title = request.POST.get("Title", "")
+        author = request.POST.get("Author", "")
+        genre = request.POST.get("Genre", "")
+        queryset = Book.objects.all()
+        if len(isbn) > 0:
+            if len(queryset.filter(ISBN = isbn)) == 1:
+                return redirect('bookDetails', isbn=isbn)
+            else:
+                queryset = Book.objects.all()
+        else:
+            if len(Title) > 0:
+                queryset = queryset.filter(title__icontains = Title)
+            if len(author) > 0:
+                author_names = author.split(' ')
+                for name in author_names:
+                    authors_forename = Author.objects.all().filter(forename__icontains = name)
+                    authors_surname = Author.objects.all().filter(surname__icontains = name)
+                    authors = authors_surname | authors_forename
+                    queryset = queryset.filter(bookAuthor__in = authors)
+            if len(genre) > 0:
+                genres = genre.split(', ')
+                for genre_name in genres:
+                    matches = Genre.objects.all().filter(name__icontains = genre_name)
+                    queryset = queryset.filter(bookGenre__in = matches)
+        table = BookTable(queryset)
+    else:
+        queryset = Book.objects.all()
+        table = BookTable(queryset)
+        table.paginate(page=request.GET.get("page", 1), per_page=25)
+
+    #if len(queryset) > 100:
+        #queryset = queryset[0:100]
+
+
+    context["table"] = table
+
+    return render(request, "libraryaccess/book_search.html", context)

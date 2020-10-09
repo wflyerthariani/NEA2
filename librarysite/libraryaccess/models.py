@@ -70,6 +70,10 @@ class Book(models.Model):
     def all_authors(self):
         return ', '.join([self.bookAuthor.all()[i].forename+' '+self.bookAuthor.all()[i].surname for i in range(len(self.bookAuthor.all()))])
 
+    @property
+    def all_genres(self):
+        return ', '.join([self.bookGenre.all()[i].name for i in range(len(self.bookGenre.all()))])
+
 
 class Student(AbstractBaseUser):
     email 					= models.EmailField(verbose_name="email", max_length=60, unique=True)
