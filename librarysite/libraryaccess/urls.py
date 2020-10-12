@@ -13,5 +13,6 @@ urlpatterns = [
     #path('dataadd/', views.load_data, name='dataadd'),#
     path('book_view/<str:isbn>/', views.book_view, name='bookDetails'),
     path('mybooks/', views.books_read_view, name='myBooks'),
-    path('booksearch/', views.book_search, name='book_search')
+    path('booksearch/', views.book_search, name='book_search'),
+    path('recommend/', views.recommendation_view, name='recommend')
 ]

@@ -18,4 +18,3 @@ def get_imagelink(isbn):
     parser = json.loads(json_data)
     return str(parser['items'][0]['volumeInfo']['imageLinks']['thumbnail'])
     
-print(get_imagelink('0590426850'))

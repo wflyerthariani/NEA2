@@ -8,59 +8,65 @@ Created on Thu Sep 10 11:27:30 2020
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-        
+
 
 def recommend_by_description(descriptions, isbns, books_read, recommendation_number):
-    vectorizer = TfidfVectorizer(lowercase=True, stop_words='english', ngram_range=(2, 2), min_df = 1)
-    tfidf_matrix = vectorizer.fit_transform(descriptions)
-    read_indices = []
-    for book in books_read:
-        read_indices.append(isbns.index(book))
-    required_rows = [tfidf_matrix[i] for i in read_indices]
-    if len(required_rows) > 0:
-        cumulation = required_rows[0]
-        for i in range(len(required_rows)-1):
-            cumulation = cumulation+required_rows[i+1]
+    if len(books_read) == 0:
+        return isbns[:recommendation_number+1]
     else:
-        cumulation = []
-    sg = cosine_similarity(cumulation, tfidf_matrix)
-    sig = list(enumerate(sg[0]))
-    sig = sorted(sig, key=lambda x: x[1], reverse=True)
-    sig = sig[0:(recommendation_number-1)+len(books_read)]
-    final = []
-    for i in range(len(sig)):
-        isbn = isbns[sig[i][0]]
-        if isbn not in books_read:
-            final.append(isbn)
-    return(final[0:recommendation_number])
-        
+        vectorizer = TfidfVectorizer(lowercase=True, stop_words='english', ngram_range=(2, 2), min_df = 1)
+        tfidf_matrix = vectorizer.fit_transform(descriptions)
+        read_indices = []
+        for book in books_read:
+            read_indices.append(isbns.index(book))
+        required_rows = [tfidf_matrix[i] for i in read_indices]
+        if len(required_rows) > 0:
+            cumulation = required_rows[0]
+            for i in range(len(required_rows)-1):
+                cumulation = cumulation+required_rows[i+1]
+        else:
+            cumulation = []
+        sg = cosine_similarity(cumulation, tfidf_matrix)
+        sig = list(enumerate(sg[0]))
+        sig = sorted(sig, key=lambda x: x[1], reverse=True)
+        sig = sig[0:(recommendation_number)+len(books_read)]
+        final = []
+        for i in range(len(sig)):
+            isbn = isbns[sig[i][0]]
+            if isbn not in books_read:
+                final.append(isbn)
+        return(final[:recommendation_number+1])
+
 
 
 def recommend_by_genre(genres, isbns, books_read, recommendation_number):
-    vectorizer = CountVectorizer(ngram_range=(1, 3))
-    matrix = vectorizer.fit_transform(genres)
-    read_indices = []
-    for book in books_read:
-        read_indices.append(isbns.index(book))
-    required_rows = [matrix[i] for i in read_indices]
-
-    if len(required_rows) > 0:
-        cumulation = required_rows[0]
-        for i in range(len(required_rows)-1):
-            cumulation = cumulation+required_rows[i+1]
+    if len(books_read) == 0:
+        return isbns[:recommendation_number+1]
     else:
-        cumulation = []
-    sg = cosine_similarity(cumulation, matrix)
-    sig = list(enumerate(sg[0]))
-    sig = sorted(sig, key=lambda x: x[1], reverse=True)
-    sig = sig[0:(recommendation_number-1)+len(books_read)]
-    final = []
-    for i in range(len(sig)):
-        isbn = isbns[sig[i][0]]
-        if isbn not in books_read:
-            final.append(isbn)
-    return(final[0:recommendation_number])
-    
+        vectorizer = CountVectorizer(ngram_range=(1, 3))
+        matrix = vectorizer.fit_transform(genres)
+        read_indices = []
+        for book in books_read:
+            read_indices.append(isbns.index(book))
+        required_rows = [matrix[i] for i in read_indices]
+
+        if len(required_rows) > 0:
+            cumulation = required_rows[0]
+            for i in range(len(required_rows)-1):
+                cumulation = cumulation+required_rows[i+1]
+        else:
+            cumulation = []
+        sg = cosine_similarity(cumulation, matrix)
+        sig = list(enumerate(sg[0]))
+        sig = sorted(sig, key=lambda x: x[1], reverse=True)
+        sig = sig[:(recommendation_number-1)+len(books_read)]
+        final = []
+        for i in range(len(sig)):
+            isbn = isbns[sig[i][0]]
+            if isbn not in books_read:
+                final.append(isbn)
+        return(final[:recommendation_number])
+
 
 
 def combined_recommendation(genre_recommendations, description_recommendations, number_of_recommendations, titles, books_read, isbns):
@@ -92,5 +98,3 @@ def combined_recommendation(genre_recommendations, description_recommendations, 
                         remaining -= 1
             newcounter += 1
         return(selected_list)
-            
-            

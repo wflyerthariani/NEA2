@@ -9,6 +9,9 @@ import requests
 import json
 from libraryaccess.get_image_from_isbn import get_imagelink
 from libraryaccess.tables import BookTable
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from libraryaccess.vectoriser import recommend_by_description, recommend_by_genre, combined_recommendation
 
 def index(request):
     context = {}
@@ -238,3 +241,25 @@ def book_search(request):
     context["table"] = table
 
     return render(request, "libraryaccess/book_search.html", context)
+
+
+def recommendation_view(request):
+    context = {}
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    books_in_library = Book.objects.all().filter(inLibrary = True)
+    read_books = request.user.studentBook.all()
+    all_books = books_in_library | read_books
+    all_isbns = [book.ISBN for book in all_books]
+    all_descriptions = [book.description for book in all_books]
+    all_genres = [' '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))]) for book in all_books]
+    all_titles = [book.title for book in all_books]
+    read_isbns = [book.ISBN for book in read_books]
+    result_isbns_description = recommend_by_description(all_descriptions, all_isbns, read_isbns, 100)
+    result_isbns_genre = recommend_by_genre(all_genres, all_isbns, read_isbns, 100)
+    result_isbns = combined_recommendation(result_isbns_genre, result_isbns_description, 5, all_titles, read_isbns, all_isbns)
+    book_suggestions = Book.objects.filter(ISBN__in=result_isbns)
+    table = BookTable(book_suggestions)
+    context["table"] = table
+    return render(request, "libraryaccess/recommend.html", context)
