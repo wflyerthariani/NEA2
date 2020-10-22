@@ -11,8 +11,9 @@ urlpatterns = [
     path('mycard/', views.card_addition_view, name='cardAddition'),
     path('cardlogin/', views.card_login_view, name='cardLogin'),
     path('dataadd/', views.load_data, name='dataadd'),
-    path('book_view/<str:isbn>/', views.book_view, name='bookDetails'),
+    path('bookview/<str:isbn>/', views.book_view, name='bookDetails'),
     path('mybooks/', views.books_read_view, name='myBooks'),
-    path('booksearch/', views.book_search, name='book_search'),
-    path('recommend/', views.recommendation_view, name='recommend')
+    path('booksearch/', views.book_search, name='bookSearch'),
+    path('recommend/', views.recommendation_view, name='recommend'),
+    path('removebook/<str:isbn>/', views.remove_book_view, name='removeBook')
 ]

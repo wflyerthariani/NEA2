@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from libraryaccess.get_image_from_isbn import get_imagelink
-from libraryaccess.tables import BookTable
+from libraryaccess.tables import BookTable, MyBookTable
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from libraryaccess.vectoriser import recommend_by_description, recommend_by_genre, combined_recommendation
@@ -16,6 +16,7 @@ from libraryaccess.vectoriser import recommend_by_description, recommend_by_genr
 def index(request):
     context = {}
     return render(request, 'libraryaccess/home.html', context)
+
 
 def registration_view(request):
     context = {}
@@ -36,15 +37,12 @@ def registration_view(request):
     return render(request, 'libraryaccess/registration.html', context)
 
 
-
 def logout_view(request):
     logout(request)
     return redirect('index')
 
 
-
 def login_view(request):
-
     context = {}
     user = request.user
     if user.is_authenticated:
@@ -60,7 +58,6 @@ def login_view(request):
             if user:
                 login(request, user)
                 return redirect('index')
-
     else:
         form = AccountAuthenticationForm()
 
@@ -68,14 +65,11 @@ def login_view(request):
     return render(request, 'libraryaccess/login.html', context)
 
 
-
 def account_view(request):
-
     if not request.user.is_authenticated:
         return redirect("login")
 
     context = {}
-
     if request.POST:
         form = AccountUpdateForm(request.POST, instance=request.user)
         if form.is_valid():
@@ -85,13 +79,12 @@ def account_view(request):
     context['account_form'] = form
     return render(request, 'libraryaccess/account.html', context)
 
-def card_addition_view(request):
 
+def card_addition_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
     context = {'error':''}
-
     code = request.POST.get("cardScan", "")
     if len(code) == 8:
         if len(Student.objects.raw('SELECT * FROM libraryaccess_Student WHERE libraryaccess_Student.cardUID = %s', [code])) == 0:
@@ -106,16 +99,14 @@ def card_addition_view(request):
     elif len(code) > 0:
         context['error'] = 'Invalid Card'
 
-    return render(request, 'libraryaccess/cardScan.html', context)
+    return render(request, 'libraryaccess/cardscan.html', context)
 
 
 def card_login_view(request):
-
     if request.user.is_authenticated:
         return redirect("index")
 
     context = {'error':''}
-
     if request.POST:
         code = request.POST.get("cardScan", "")
         if len(code) == 8:
@@ -128,10 +119,10 @@ def card_login_view(request):
         elif len(code) > 0:
             context['error'] = 'Invalid Card'
 
-    return render(request, 'libraryaccess/cardScan.html', context)
+    return render(request, 'libraryaccess/cardscan.html', context)
+
 
 def load_data(request):
-
     context = {}
     with open("libraryaccess/output_1.csv") as f:
         reader = csv.reader(f)
@@ -152,6 +143,7 @@ def load_data(request):
                     newbook.save()
 
     return render(request, 'libraryaccess/dataadd.html', context)
+
 
 def book_view(request, isbn):
     context = {}
@@ -192,13 +184,12 @@ def book_view(request, isbn):
 
 def books_read_view(request):
     if request.user.is_authenticated:
-        table = BookTable(request.user.studentBook.all())
+        table = MyBookTable(request.user.studentBook.all())
     else:
         return redirect("login")
 
-    return render(request, "libraryaccess/mybooks_list.html", {
-        "table": table
-    })
+    return render(request, "libraryaccess/mybooks.html", {"table": table})
+
 
 def book_search(request):
     context = {}
@@ -228,19 +219,13 @@ def book_search(request):
                 for genre_name in genres:
                     matches = Genre.objects.all().filter(name__icontains = genre_name)
                     queryset = queryset.filter(bookGenre__in = matches)
-        table = BookTable(queryset)
+        table = BookTable(queryset, orderable = False)
     else:
         queryset = Book.objects.all()
         table = BookTable(queryset)
         table.paginate(page=request.GET.get("page", 1), per_page=25)
-
-    #if len(queryset) > 100:
-        #queryset = queryset[0:100]
-
-
     context["table"] = table
-
-    return render(request, "libraryaccess/book_search.html", context)
+    return render(request, "libraryaccess/booksearch.html", context)
 
 
 def recommendation_view(request):
@@ -263,3 +248,12 @@ def recommendation_view(request):
     table = BookTable(book_suggestions)
     context["table"] = table
     return render(request, "libraryaccess/recommend.html", context)
+
+
+def remove_book_view(request, isbn):
+    if request.user.is_authenticated:
+        if request.user.studentBook.filter(ISBN = isbn):
+            request.user.studentBook.filter(ISBN = isbn).delete()
+        return redirect('myBooks')
+    else:
+        return redirect('index')
