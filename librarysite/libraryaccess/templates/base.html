@@ -7,7 +7,7 @@
 
     {% if request.user.is_authenticated %}
       <p><a href="{% url 'index' %}">Home</a> | <a href="{% url 'logout' %}">Logout</a> | <a href="{% url 'account' %}">Account</a> | <a href="{% url 'cardAddition' %}">Add or change card</a> | <a href="{% url 'myBooks' %}">My Books</a> | <a href="{% url 'book_search' %}">Search library books</a> | <a href="{% url 'recommend' %}">My Recommendations</a></p>
-      <p>Hello, {{request.user.forename}}</p>
+      <p>Hello, {{request.user}}</p>
     {% else %}
       <p><a href="{% url 'index' %}">Home</a> | <a href="{% url 'registration' %}">Register</a> | <a href="{% url 'login' %}">Login</a> | <a href="{% url 'cardLogin' %}">Login with card</a> | <a href="{% url 'book_search' %}">Search library books</a></p>
     {% endif %}

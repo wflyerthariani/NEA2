@@ -136,11 +136,11 @@ def load_data(request):
     with open("libraryaccess/output_1.csv") as f:
         reader = csv.reader(f)
         for row in reader:
-            newbook, created = Book.objects.get_or_create(ISBN = row[0], title = row[1].lower(), publisher = row[4], publishDate = row[3], description = row[5], location = '576.8')
+            newbook, created = Book.objects.get_or_create(ISBN = row[0], title = row[1], publisher = row[4], publishDate = row[3], description = row[5], location = '576.8')
             authors = row[2].split(',')
             for author in authors:
                 authorname = author.split(' ')
-                newauthor, created = Author.objects.get_or_create(forename = ' '.join([authorname[i] for i in range(len(authorname)-1)]), surname = authorname[-1])
+                newauthor, created = Author.objects.get_or_create(forename = ' '.join([authorname[i].lower().capitalize() for i in range(len(authorname)-1)]), surname = authorname[-1].lower().capitalize())
                 if newauthor not in newbook.bookAuthor.all():
                     newbook.bookAuthor.add(newauthor)
                     newbook.save()
