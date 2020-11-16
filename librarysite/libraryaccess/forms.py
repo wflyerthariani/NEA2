@@ -43,8 +43,8 @@ class AccountAuthenticationForm(forms.ModelForm):
 class AccountUpdateForm(forms.ModelForm):
     yearGroup_choices = [(7, '7'), (8, '8'), (9, '9'), (10, '10'), (11, '11'), (12, '12'), (13, '13')]
     yearGroup = forms.IntegerField(label='What year group are you in: ', widget=forms.Select(choices=yearGroup_choices), required=False)
-    formCode = forms.CharField(max_length = 3, label='What form are you in: ', required=False)
-    studentID = forms.IntegerField(label='What is your student ID number: ', required=False)
+    formCode = forms.CharField(max_length = 3, label='What form are you in', required=False)
+    studentID = forms.IntegerField(label='What is your student ID number', required=False)
 
     class Meta:
         model = Student

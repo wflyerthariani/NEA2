@@ -75,7 +75,7 @@ def account_view(request):
         if form.is_valid():
             form.save()
     else:
-        form = AccountUpdateForm(initial= {"username": request.user.username, "forename": request.user.forename, "surname": request.user.surname})
+        form = AccountUpdateForm(initial= {"username": request.user.username, "forename": request.user.forename, "surname": request.user.surname, "formCode": request.user.formCode, "studentID": request.user.studentID, "yearGroup": request.user.yearGroup})
     context['account_form'] = form
     return render(request, 'libraryaccess/account.html', context)
 
@@ -204,9 +204,11 @@ def book_search(request):
                 return redirect('bookDetails', isbn=isbn)
             else:
                 queryset = Book.objects.all()
+                table = BookTable(queryset, orderable = True)
         else:
             if len(Title) > 0:
                 queryset = queryset.filter(title__icontains = Title)
+                table = BookTable(queryset, orderable = False)
             if len(author) > 0:
                 author_names = author.split(' ')
                 for name in author_names:
@@ -214,15 +216,19 @@ def book_search(request):
                     authors_surname = Author.objects.all().filter(surname__icontains = name)
                     authors = authors_surname | authors_forename
                     queryset = queryset.filter(bookAuthor__in = authors)
+                    table = BookTable(queryset, orderable = False)
             if len(genre) > 0:
                 genres = genre.split(', ')
                 for genre_name in genres:
                     matches = Genre.objects.all().filter(name__icontains = genre_name)
                     queryset = queryset.filter(bookGenre__in = matches)
-        table = BookTable(queryset, orderable = False)
+                    table = BookTable(queryset, orderable = False)
+            else:
+                queryset = Book.onjects.all()
+                table = BookTable(queryset, orderable = True)
     else:
         queryset = Book.objects.all()
-        table = BookTable(queryset)
+        table = BookTable(queryset, orderable = True)
         table.paginate(page=request.GET.get("page", 1), per_page=25)
     context["table"] = table
     return render(request, "libraryaccess/booksearch.html", context)
@@ -257,3 +263,31 @@ def remove_book_view(request, isbn):
         return redirect('myBooks')
     else:
         return redirect('index')
+
+
+def year_group_view(request):
+    context = {}
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    year_group = request.user.yearGroup
+    if year_group == None:
+        return redirect("account")
+    else:
+        students = Student.objects.all().filter(yearGroup = year_group)
+        books = Book.objects.all()
+        numbers = [book.student_set.all().count() for book in books]
+        enumerated_numbers = list(enumerate(numbers))
+        sorted_numbers = sorted(enumerated_numbers, key=lambda x:x[1])
+        if len(sorted_numbers) > 5:
+            top_five = [item[0] for item in sorted_numbers[-5::]]
+            top_five.reverse()
+        else:
+            top_five = [item[0] for item in sorted_numbers]
+            top_five.reverse()
+        queryset = []
+        for index in top_five:
+            queryset.append(books[index])
+        table = BookTable(queryset)
+        context["table"] = table
+        return render(request, "libraryaccess/yeargroup.html", context)
