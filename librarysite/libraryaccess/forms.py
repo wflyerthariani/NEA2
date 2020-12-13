@@ -45,10 +45,11 @@ class AccountUpdateForm(forms.ModelForm):
     yearGroup = forms.IntegerField(label='What year group are you in: ', widget=forms.Select(choices=yearGroup_choices), required=False)
     formCode = forms.CharField(max_length = 3, label='What form are you in', required=False)
     studentID = forms.IntegerField(label='What is your student ID number', required=False)
+    book_share = forms.BooleanField(label='Would you like other people to be able to see your books', widget=forms.CheckboxInput(), required=False)
 
     class Meta:
         model = Student
-        fields = ('username', 'forename', 'surname', 'yearGroup', 'formCode', 'studentID')
+        fields = ('username', 'forename', 'surname', 'yearGroup', 'formCode', 'studentID', 'book_share')
 
     def clean_username(self):
         if self.is_valid():

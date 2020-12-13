@@ -12,6 +12,7 @@ from libraryaccess.tables import BookTable, MyBookTable
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from libraryaccess.vectoriser import recommend_by_description, recommend_by_genre, combined_recommendation
+from django_tables2 import RequestConfig
 
 def index(request):
     context = {}
@@ -223,12 +224,13 @@ def book_search(request):
                     matches = Genre.objects.all().filter(name__icontains = genre_name)
                     queryset = queryset.filter(bookGenre__in = matches)
                     table = BookTable(queryset, orderable = False)
-            else:
-                queryset = Book.onjects.all()
+            elif len(author) == 0 and len(Title) == 0:
+                queryset = Book.objects.all()
                 table = BookTable(queryset, orderable = True)
     else:
         queryset = Book.objects.all()
-        table = BookTable(queryset, orderable = True)
+        table = BookTable(queryset)
+        RequestConfig(request).configure(table)
         table.paginate(page=request.GET.get("page", 1), per_page=25)
     context["table"] = table
     return render(request, "libraryaccess/booksearch.html", context)
@@ -289,5 +291,15 @@ def year_group_view(request):
         for index in top_five:
             queryset.append(books[index])
         table = BookTable(queryset)
+        RequestConfig(request).configure(table)
         context["table"] = table
         return render(request, "libraryaccess/yeargroup.html", context)
+
+def student_search_view(request):
+    pass
+
+def password_reset_view(request):
+    pass
+
+def add_new_book_view(request):
+    pass
