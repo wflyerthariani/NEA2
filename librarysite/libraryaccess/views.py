@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from libraryaccess.get_image_from_isbn import get_imagelink
-from libraryaccess.tables import BookTable, MyBookTable
+from libraryaccess.tables import BookTable, MyBookTable, StudentTable
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from libraryaccess.vectoriser import recommend_by_description, recommend_by_genre, combined_recommendation
@@ -296,7 +296,20 @@ def year_group_view(request):
         return render(request, "libraryaccess/yeargroup.html", context)
 
 def student_search_view(request):
-    pass
+    context = {}
+    queryset = Student.objects.all()
+    if request.POST:
+        Forename = request.POST.get("Forename", "")
+        Surname = request.POST.get("Surname", "")
+        if len(Forename) > 0:
+            queryset = queryset.filter(forename = Forename)
+        if len(Surname) > 0:
+            queryset = queryset.filter(surname = Surname)
+
+    table = StudentTable(queryset)
+    RequestConfig(request).configure(table)
+    context["table"] = table
+    return render(request, "libraryaccess/studentsearch.html", context)
 
 def student_view(request, ID):
     context = {}

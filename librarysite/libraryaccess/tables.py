@@ -15,3 +15,9 @@ class MyBookTable(tables.Table):
     class Meta:
         model = Book
         fields = ['ISBN', 'title', 'all_authors']
+
+class StudentTable(tables.Table):
+    go_to_view = tables.TemplateColumn('<a href="/libraryaccess/studentview/{{record.pk}}">View</a>')
+    class Meta:
+        model = Student
+        fields = ['forename', 'surname']
