@@ -298,6 +298,22 @@ def year_group_view(request):
 def student_search_view(request):
     pass
 
+def student_view(request, ID):
+    context = {}
+    student = get_object_or_404(Student, pk=int(ID))
+
+    context["forename"] = (student.forename).capitalize()
+    context["surname"] = (student.surname).capitalize()
+
+    if student.book_share == True:
+        queryset = student.studentBook.all()
+    else:
+        queryset = []
+    table = BookTable(queryset)
+    RequestConfig(request).configure(table)
+    context["table"] = table
+    return render(request, "libraryaccess/studentview.html", context)
+
 def password_reset_view(request):
     pass
 
