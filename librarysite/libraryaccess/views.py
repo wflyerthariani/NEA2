@@ -7,7 +7,7 @@ import csv
 from bs4 import BeautifulSoup
 import requests
 import json
-from libraryaccess.get_image_from_isbn import get_imagelink
+from libraryaccess.get_info_from_isbn import get_imagelink, get_details
 from libraryaccess.tables import BookTable, MyBookTable, StudentTable
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -331,4 +331,28 @@ def password_reset_view(request):
     pass
 
 def add_new_book_view(request):
-    pass
+    context = {"error":''}
+    if request.POST:
+        isbn = request.POST.get("ISBN", "")
+        print(isbn)
+        try:
+            Title, Authors, publishedDate, Description, Genres = get_details(str(isbn))
+        except:
+            context["error"] = 'Book Details Not Found'
+            return render(request, "libraryaccess/bookadd.html", context)
+        if isbn in Book.objects.values_list('ISBN', flat=True):
+            context["error"] = 'Book already in library'
+            return render(request, "libraryaccess/bookadd.html", context)
+        newbook, created = Book.objects.get_or_create(ISBN = isbn, publishDate = int(publishedDate), title = Title, description = Description, inLibrary = False)
+        for author in Authors:
+            authorname = author.split(' ')
+            newauthor, created = Author.objects.get_or_create(forename = ' '.join([authorname[i].lower().capitalize() for i in range(len(authorname)-1)]), surname = authorname[-1].lower().capitalize())
+            newbook.bookAuthor.add(newauthor)
+            newbook.save()
+        for genre in Genres:
+            newgenre, created = Genre.objects.get_or_create(name = genre)
+            newbook.bookGenre.add(newgenre)
+            newbook.save()
+        return redirect('index')
+    else:
+        return render(request, "libraryaccess/bookadd.html", context)

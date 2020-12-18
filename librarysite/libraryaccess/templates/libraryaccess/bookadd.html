@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method='POST' id='add'>
+  {% csrf_token %}
+  <input type="text" name="ISBN" placeholder="ISBN">
+  <button type="submit">Search</button>
+</form>
+<p>Error: {{error}}</p>
+{% endblock content %}

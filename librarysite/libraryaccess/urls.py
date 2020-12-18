@@ -18,5 +18,6 @@ urlpatterns = [
     path('removebook/<str:isbn>/', views.remove_book_view, name='removeBook'),
     path('yeargroup/', views.year_group_view, name='yearGroup'),
     path('studentview/<str:ID>/', views.student_view, name='studentView'),
-    path('studentsearch/', views.student_search_view, name='studentSearch')
+    path('studentsearch/', views.student_search_view, name='studentSearch'),
+    path('bookadd/', views.add_new_book_view, name='bookadd')
 ]
