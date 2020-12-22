@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method='POST' id='confirmation'>
+  {% csrf_token %}
+  <input type="password" name="password" placeholder="Input Admin password">
+  <button type="Submit">Submit</button>
+</form>
+<p>{{error}}</p>
+{% endblock content %}

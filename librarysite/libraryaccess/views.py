@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.hashers import check_password
 from libraryaccess.forms import RegistrationForm, AccountAuthenticationForm, AccountUpdateForm
 from libraryaccess.models import Student, Author, Genre, Book
 import csv
@@ -327,14 +328,10 @@ def student_view(request, ID):
     context["table"] = table
     return render(request, "libraryaccess/studentview.html", context)
 
-def password_reset_view(request):
-    pass
-
 def add_new_book_view(request):
     context = {"error":''}
     if request.POST:
         isbn = request.POST.get("ISBN", "")
-        print(isbn)
         try:
             Title, Authors, publishedDate, Description, Genres = get_details(str(isbn))
         except:
@@ -356,3 +353,19 @@ def add_new_book_view(request):
         return redirect('index')
     else:
         return render(request, "libraryaccess/bookadd.html", context)
+
+def confirm_register_view(request):
+    context = {"error":''}
+    if request.POST:
+        valid = False
+        password = request.POST.get("password", '')
+        comparisons = Student.objects.all().filter(is_admin = True)
+        for comparison in comparisons.values_list('password', flat=True):
+            if check_password(password, comparison):
+                valid = True
+        if valid:
+            request.session['valid_register'] = True
+            return redirect("index")
+        else:
+            context["error"] = 'Not valid password'
+    return render(request, "libraryaccess/confirmreg.html", context)
