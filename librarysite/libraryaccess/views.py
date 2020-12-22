@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.hashers import check_password
+from django.utils import timezone
 from libraryaccess.forms import RegistrationForm, AccountAuthenticationForm, AccountUpdateForm
-from libraryaccess.models import Student, Author, Genre, Book
+from libraryaccess.models import Student, Author, Genre, Book, StudentRegister
 import csv
 from bs4 import BeautifulSoup
 import requests
@@ -14,6 +15,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from libraryaccess.vectoriser import recommend_by_description, recommend_by_genre, combined_recommendation
 from django_tables2 import RequestConfig
+import datetime
 
 def index(request):
     context = {}
@@ -369,3 +371,69 @@ def confirm_register_view(request):
         else:
             context["error"] = 'Not valid password'
     return render(request, "libraryaccess/confirmreg.html", context)
+
+def register_view(request):
+    context = {'error':''}
+    if request.POST:
+        form = AccountAuthenticationForm()
+        code = request.POST.get("cardScan", "")
+        if len(code) <= 0:
+            email = request.POST['email']
+            password = request.POST['password']
+            user = authenticate(email=email, password=password)
+
+            if user:
+                start_date = timezone.now().date()
+                end_date = start_date + datetime.timedelta(days=1)
+                user_registers = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+                if len(user_registers) == 0:
+                    new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
+                    new_register.save()
+                    context['error'] = (user.forename.capitalize()+' has been signed in.')
+                else:
+                    latest_register = user_registers.latest('signinTime')
+                    if latest_register.signoutTime == None:
+                        latest_register.signoutTime = timezone.now()
+                        latest_register.save()
+                        context['error'] = (user.forename.capitalize()+' has been signed out.')
+                    else:
+                        new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
+                        new_register.save()
+                        context['error'] = (user.forename.capitalize()+' has been signed in.')
+            else:
+                context['error'] = 'Invalid login'
+
+        else:
+            if len(code) == 8:
+                if len(Student.objects.raw('SELECT * FROM libraryaccess_Student WHERE libraryaccess_Student.cardUID = %s', [code])) == 0:
+                    context['error'] = 'No account associated with this card'
+                else:
+                    user = Student.objects.get(cardUID = code)
+                    start_date = timezone.now().date()
+                    end_date = start_date + datetime.timedelta(days=1)
+                    user_registers = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+                    if len(user_registers) == 0:
+                        new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
+                        new_register.save()
+                        context['error'] = (user.forename.capitalize()+' has been signed in.')
+                    else:
+                        latest_register = user_registers.latest('signinTime')
+                        if latest_register.signoutTime == None:
+                            latest_register.signoutTime = timezone.now()
+                            latest_register.save()
+                            context['error'] = (user.forename.capitalize()+' has been signed out.')
+                        else:
+                            new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
+                            new_register.save()
+                            context['error'] = (user.forename.capitalize()+' has been signed in.')
+
+            elif len(code) > 0:
+                context['error'] = 'Invalid Card'
+            else:
+                context['error'] = 'User not found, try again'
+
+    else:
+        form = AccountAuthenticationForm()
+
+    context['login_form'] = form
+    return render(request, 'libraryaccess/register.html', context)
