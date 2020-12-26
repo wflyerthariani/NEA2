@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+LOGIN_URL = '/libraryaccess/login/'
 # Application definition
 
 INSTALLED_APPS = [

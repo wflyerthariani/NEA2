@@ -27,4 +27,5 @@ urlpatterns = [
     path('confirmreg/', views.confirm_register_view, name='confirm_register'),
     path('libraryregister/', views.register_view, name='libraryRegister'),
     path('closereg/', views.close_register, name='closeRegister'),
+    path('mailreg/', views.mail_register, name='mailRegister'),
 ]

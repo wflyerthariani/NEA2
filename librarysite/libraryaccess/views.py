@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.decorators import user_passes_test
 from django.utils import timezone
+from django.core.mail import send_mail
 from libraryaccess.forms import RegistrationForm, AccountAuthenticationForm, AccountUpdateForm
 from libraryaccess.models import Student, Author, Genre, Book, StudentRegister
 import csv
@@ -370,7 +372,7 @@ def confirm_register_view(request):
             return redirect("libraryRegister")
         else:
             context["error"] = 'Not valid password'
-            reuest.session['valid_register'] = False
+            request.session['valid_register'] = False
     return render(request, "libraryaccess/confirmreg.html", context)
 
 def register_view(request):
@@ -414,7 +416,7 @@ def register_view(request):
                             user = Student.objects.get(cardUID = code)
                             start_date = timezone.now().date()
                             end_date = start_date + datetime.timedelta(days=1)
-                            user_registers = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+                            user_registers = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date)).filter(ID=user)
                             if len(user_registers) == 0:
                                 new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
                                 new_register.save()
@@ -444,4 +446,14 @@ def register_view(request):
 
 def close_register(request):
     request.session['valid_register'] = False
+    return redirect('index')
+
+@user_passes_test(lambda u: u.is_admin)
+def mail_register(request):
+    start_date = timezone.now().date()
+    end_date = start_date + datetime.timedelta(days=1)
+    queryset = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+    names = queryset.values_list('ID__surname', 'ID__forename')
+    names = '\n'.join([j.capitalize()+' '+i.capitalize() for (i, j) in names])
+    send_mail('Library Register', 'The following students have been registered today:\n'+names, None, ['wflyerthariani@gmail.com'])
     return redirect('index')
