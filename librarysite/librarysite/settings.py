@@ -28,6 +28,8 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 LOGIN_URL = '/libraryaccess/login/'
+
+DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap4.html"
 # Application definition
 
 INSTALLED_APPS = [

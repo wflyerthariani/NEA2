@@ -378,6 +378,8 @@ def confirm_register_view(request):
 def register_view(request):
     if 'valid_register' in request.session:
         if request.session['valid_register']:
+            logout(request)
+            request.session['valid_register'] = True
             context = {'error':''}
             if request.POST:
                 form = AccountAuthenticationForm()

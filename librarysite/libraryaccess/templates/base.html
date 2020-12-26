@@ -1,16 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+
+  <style>
+  form {
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  margin: 2px 2px;
+  cursor: pointer;
+  border-radius: 20px;
+  padding: 10px 16px;
+  border: none;
+  }
+  button[type=submit]{
+  background-color: #FFFFFF;
+  border: none;
+  color: black;
+  padding: 10px 16px;
+  text-decoration: none;
+  margin: 2px 2px;
+  cursor: pointer;
+  border-radius: 20px;
+  }
+  li {
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  margin: 2px 2px;
+  cursor: pointer;
+  border-radius: 20px;
+  padding: 10px 16px;
+  }
+  a {color: #4CAF50;}
+  </style>
+
+
   {% block headContent %}
   {% endblock headContent %}
   <title>This is the title</title>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">LibraryAccess</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-    {% if request.user.is_authenticated %}
-      <p><a href="{% url 'index' %}">Home</a> | <a href="{% url 'logout' %}">Logout</a> | <a href="{% url 'account' %}">Account</a> | <a href="{% url 'cardAddition' %}">Add or change card</a> | <a href="{% url 'myBooks' %}">My Books</a> | <a href="{% url 'bookSearch' %}">Search library books</a> | <a href="{% url 'recommend' %}">My Recommendations</a> | <a href="{% url 'yearGroup' %}">Year Group Books</a></p>
-      <p>Hello, {{request.user}}</p>
-    {% else %}
-      <p><a href="{% url 'index' %}">Home</a> | <a href="{% url 'registration' %}">Register</a> | <a href="{% url 'login' %}">Login</a> | <a href="{% url 'cardLogin' %}">Login with card</a> | <a href="{% url 'bookSearch' %}">Search library books</a></p>
-    {% endif %}
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="{% url 'index' %}">Home <span class="sr-only">(current)</span></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'bookSearch' %}">Search Library Books</a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Account
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+            <a class="dropdown-item" href="{% url 'account' %}">Update Account</a>
+            <a class="dropdown-item" href="{% url 'cardAddition' %}">Add or change card</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Social
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="{% url 'yearGroup' %}">Top books in my year group</a>
+            <a class="dropdown-item" href="{% url 'studentSearch' %}">Search for my friends</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            My Reading
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="{% url 'myBooks' %}">My Books</a>
+            <a class="dropdown-item" href="{% url 'recommend' %}">My Recommendations</a>
+            <a class="dropdown-item" href="{% url 'bookadd' %}">Add new book</a>
+          </div>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'registration' %}">Sign Up</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Login</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'cardLogin' %}">Login with your card</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'reset_password' %}">Forgot Password</a>
+        </li>
+        {% endif %}
+        {% if user.is_admin %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'confirm_register' %}">Activate Register</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'mailRegister' %}">Send Register</a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+
+  {% if user.is_authenticated %}
+  <p>Hello, {{request.user}}</p>
+  {% endif %}
 
 </head>
 
@@ -20,6 +123,9 @@
       content not found
     {% endblock content %}
   </div>
+  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 </body>
 
 <footer>
