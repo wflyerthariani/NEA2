@@ -19,22 +19,33 @@ from libraryaccess.vectoriser import recommend_by_description, recommend_by_genr
 from django_tables2 import RequestConfig
 import datetime
 
+#View defines how to render the home page
 def index(request):
+    #Nothing needs to be passed to the page
     context = {}
+    #The html file is rendered with the user's request and the context to be passed
     return render(request, 'libraryaccess/home.html', context)
 
-
+#View for the sign-up page
 def registration_view(request):
+    #Context will contain the form defined in the forms file as well as errors
     context = {}
+    #Check for POST request to ensure it is only processed when a form is submit
     if request.POST:
+        #Gets the required form from the forms file
         form = RegistrationForm(request.POST)
+        #Only processes data if the form is valid
         if form.is_valid():
+            #Saves the changes to the database
             form.save()
+            #Logs in the user after they register using Django's built-in func
             email = form.cleaned_data.get('email')
             raw_password = form.cleaned_data.get('password1')
             account = authenticate(email=email, password=raw_password)
             login(request, account)
+            #Redirects the user to the home page
             return redirect('index')
+        #If a post request is not received, the form will be passed to the page
         else:
             context['registration_form'] = form
     else:
@@ -42,82 +53,98 @@ def registration_view(request):
         context['registration_form'] = form
     return render(request, 'libraryaccess/registration.html', context)
 
-
+#View for logging-out
 def logout_view(request):
+    #Logs out the user's session and redirects to the home page with no rendering
     logout(request)
     return redirect('index')
 
-
+#View for the login page
 def login_view(request):
+    #Context will include the login form as well as errors
     context = {}
+    #If the user is already logged in, they will be redirected to the home page
     user = request.user
     if user.is_authenticated:
         return redirect('index')
-
+    #If the user is not logged in the post request will indicate form submission
     if request.POST:
         form = AccountAuthenticationForm(request.POST)
+        #Determines validity of form and logs user in similar to sign-up
         if form.is_valid():
             email = request.POST['email']
             password = request.POST['password']
             user = authenticate(email=email, password=password)
-
+            #If a user exists with the given credentials
             if user:
                 login(request, user)
                 return redirect('index')
     else:
         form = AccountAuthenticationForm()
-
+    #Passes the login form to the page via context
     context['login_form'] = form
     return render(request, 'libraryaccess/login.html', context)
 
-
+#View to see details of account and make changes
 def account_view(request):
+    #Redirects if no user is logged in
     if not request.user.is_authenticated:
         return redirect("login")
-
+    #Passes and saves a form similar to above
     context = {}
     if request.POST:
         form = AccountUpdateForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
     else:
+        #Additional parameters used to set initial values in form fields
         form = AccountUpdateForm(initial= {"username": request.user.username, "forename": request.user.forename, "surname": request.user.surname, "formCode": request.user.formCode, "studentID": request.user.studentID, "yearGroup": request.user.yearGroup})
     context['account_form'] = form
     return render(request, 'libraryaccess/account.html', context)
 
-
+#View to add or update a card
 def card_addition_view(request):
+    #Redirects user if they are not logged in
     if not request.user.is_authenticated:
         return redirect("login")
-
+    #Gives the context an error field if card is already in use or invalid
     context = {'error':''}
+    #Gets the card scan from the form defined in the html file
     code = request.POST.get("cardScan", "")
+    #Chacks the length of the card matches the school's standard
     if len(code) == 8:
-        if len(Student.objects.raw('SELECT * FROM libraryaccess_Student WHERE libraryaccess_Student.cardUID = %s', [code])) == 0:
+        #Check if nobody has the card assigned to them before assigning it
+        if len(Student.objects.all().filter(cardUID=code)) == 0:
             request.user.cardUID = code
             request.user.save()
             return redirect("index")
+        #If the user inputs the existing card it redirects to the home page
         else:
-            if Student.objects.raw('SELECT * FROM libraryaccess_Student WHERE libraryaccess_Student.cardUID = %s', [code])[0].id == request.user.id:
+            if Student.objects.get(cardUID=code).id == request.user.id:
                 return redirect("index")
+            #If the card value matches another person, an error message is displayed
             else:
                 context['error'] = 'Card belongs to someone else'
     elif len(code) > 0:
+        #If the card is not the correct type, it returns an error message
         context['error'] = 'Invalid Card'
-
+    #context containing errors is passed to display them on the page
     return render(request, 'libraryaccess/cardscan.html', context)
 
-
+#View for logging in with a card
 def card_login_view(request):
+    #Redirect if user is already logged in
     if request.user.is_authenticated:
         return redirect("index")
-
+    #Similar to above, errors are passed through context
     context = {'error':''}
     if request.POST:
         code = request.POST.get("cardScan", "")
+        #Checks if the card exists in the database and returns relevant error
         if len(code) == 8:
-            if len(Student.objects.raw('SELECT * FROM libraryaccess_Student WHERE libraryaccess_Student.cardUID = %s', [code])) == 0:
+            if len(Student.objects.all().filter(cardUID=code)) == 0:
                 context['error'] = 'No account associated with this card'
+            #If it matches a user, the user is logged in as before
             else:
                 user = Student.objects.get(cardUID = code)
                 login(request, user)
@@ -127,34 +154,16 @@ def card_login_view(request):
 
     return render(request, 'libraryaccess/cardscan.html', context)
 
-
-def load_data(request):
-    context = {}
-    with open("libraryaccess/output_1.csv") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            newbook, created = Book.objects.get_or_create(ISBN = row[0], title = row[1], publisher = row[4], publishDate = row[3], description = row[5], location = '576.8')
-            authors = row[2].split(',')
-            for author in authors:
-                authorname = author.split(' ')
-                newauthor, created = Author.objects.get_or_create(forename = ' '.join([authorname[i].lower().capitalize() for i in range(len(authorname)-1)]), surname = authorname[-1].lower().capitalize())
-                if newauthor not in newbook.bookAuthor.all():
-                    newbook.bookAuthor.add(newauthor)
-                    newbook.save()
-            genres = row[6].split(',')
-            for genre in genres:
-                newgenre, created = Genre.objects.get_or_create(name = genre)
-                if newgenre not in newbook.bookGenre.all():
-                    newbook.bookGenre.add(newgenre)
-                    newbook.save()
-
-    return render(request, 'libraryaccess/dataadd.html', context)
-
-
+#View to see the book details
 def book_view(request, isbn):
     context = {}
+    #Attempts to get book from isbn in url
+    #If object is not found a 404 error is returned
     book = get_object_or_404(Book, ISBN=str(isbn))
 
+    #If the user is logged in they have the option to add the book to their list
+    #If the user has already added it, the 'added' value changes to prevent readding
+    #If the 'added' value is 'added' then the button will be deactivated
     if request.user.is_authenticated:
         context['authenticated'] = True
         if book in request.user.studentBook.all():
@@ -173,9 +182,12 @@ def book_view(request, isbn):
         context['authenticated'] = False
         context['added'] = 'unaddable'
 
+    #Passes in all book information as separate values in context dictionary
+    #Attempts to get the image from the function in get_info_from_isbn file
     context['title'] = book.title
     context['description'] = book.description
     context['author'] = book.all_authors
+    #If the image is not be found using the google books api, a None value is used
     try:
         context['imagelink'] = get_imagelink(isbn)
     except:
@@ -187,8 +199,10 @@ def book_view(request, isbn):
     context['genre'] = book.all_genres
     return render(request, 'libraryaccess/bookview.html', context)
 
-
+#View for user to see books that they have added
 def books_read_view(request):
+    #If user is logged in their books are passed into a table
+    #Tables are defined in tables file and passed via context to be rendered
     if request.user.is_authenticated:
         table = MyBookTable(request.user.studentBook.all())
     else:
@@ -196,39 +210,52 @@ def books_read_view(request):
 
     return render(request, "libraryaccess/mybooks.html", {"table": table})
 
-
+#View to search for a book
 def book_search(request):
     context = {}
+    #If the user submits a search the following will be carried out
     if request.POST:
+        #Attempts to get all search fields from the html form
         isbn = request.POST.get("ISBN", "")
         Title = request.POST.get("Title", "")
         author = request.POST.get("Author", "")
         genre = request.POST.get("Genre", "")
         queryset = Book.objects.all()
+        #Checks if each field has an input to filter by
+        #ISBN field redirects to the book view if it exists
         if len(isbn) > 0:
             if len(queryset.filter(ISBN = isbn)) == 1:
                 return redirect('bookDetails', isbn=isbn)
             else:
                 queryset = Book.objects.all()
                 table = BookTable(queryset, orderable = True)
+        #Other fields filter the queryset to obtain only desired data
         else:
+            #If title has been used, searches for all titles containing term
+            #__icontains checks if title contains term instead of being the same
             if len(Title) > 0:
                 queryset = queryset.filter(title__icontains = Title)
                 table = BookTable(queryset, orderable = False)
+            #If authors are input then it has to check both forename and surname
             if len(author) > 0:
                 author_names = author.split(' ')
                 for name in author_names:
                     authors_forename = Author.objects.all().filter(forename__icontains = name)
                     authors_surname = Author.objects.all().filter(surname__icontains = name)
+                    #Joins both querysets
                     authors = authors_surname | authors_forename
                     queryset = queryset.filter(bookAuthor__in = authors)
                     table = BookTable(queryset, orderable = False)
+            #For genres, students can search multiple Genres
             if len(genre) > 0:
+                #Splits input by comma to allow multiple genres to be searched for
                 genres = genre.split(', ')
                 for genre_name in genres:
+                    #Identifies distinct objects that match the search
                     matches = Genre.objects.all().filter(name__icontains = genre_name)
                     queryset = queryset.filter(bookGenre__in = matches)
-                    table = BookTable(queryset, orderable = False)
+                    table = BookTable(queryset.distinct(), orderable = False)
+    #If no search was made then it returns the entire list of books
             elif len(author) == 0 and len(Title) == 0:
                 queryset = Book.objects.all()
                 table = BookTable(queryset, orderable = True)
@@ -236,11 +263,12 @@ def book_search(request):
         queryset = Book.objects.all()
         table = BookTable(queryset)
         RequestConfig(request).configure(table)
+        #Allows the user to browse the table in a paginated form
         table.paginate(page=request.GET.get("page", 1), per_page=25)
     context["table"] = table
     return render(request, "libraryaccess/booksearch.html", context)
 
-
+#View for seeing a student's recommendations
 def recommendation_view(request):
     context = {}
     if not request.user.is_authenticated:
@@ -354,6 +382,9 @@ def add_new_book_view(request):
             newgenre, created = Genre.objects.get_or_create(name = genre)
             newbook.bookGenre.add(newgenre)
             newbook.save()
+        newbook.save()
+        if request.user.is_authenticated:
+            request.user.studentBook.add(newbook)
         return redirect('index')
     else:
         return render(request, "libraryaccess/bookadd.html", context)
@@ -455,7 +486,7 @@ def mail_register(request):
     start_date = timezone.now().date()
     end_date = start_date + datetime.timedelta(days=1)
     queryset = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
-    names = queryset.values_list('ID__surname', 'ID__forename')
+    names = list(set(queryset.values_list('ID__surname', 'ID__forename')))
     names = '\n'.join([j.capitalize()+' '+i.capitalize() for (i, j) in names])
     send_mail('Library Register', 'The following students have been registered today:\n'+names, None, ['wflyerthariani@gmail.com'])
     return redirect('index')
