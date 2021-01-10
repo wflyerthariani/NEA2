@@ -277,11 +277,11 @@ def recommendation_view(request):
     books_in_library = Book.objects.all().filter(inLibrary = True)
     read_books = request.user.studentBook.all()
     all_books = books_in_library | read_books
-    all_isbns = [book.ISBN for book in all_books]
-    all_descriptions = [book.description for book in all_books]
+    all_isbns = list(all_books.values_list('ISBN', flat=True))
+    all_descriptions = list(all_books.values_list('description', flat=True))
     all_genres = [' '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))]) for book in all_books]
-    all_titles = [book.title for book in all_books]
-    read_isbns = [book.ISBN for book in read_books]
+    all_titles = list(all_books.values_list('title', flat=True))
+    read_isbns = list(read_books.values_list('ISBN', flat=True))
     result_isbns_description = recommend_by_description(all_descriptions, all_isbns, read_isbns, 100)
     result_isbns_genre = recommend_by_genre(all_genres, all_isbns, read_isbns, 100)
     result_isbns = combined_recommendation(result_isbns_genre, result_isbns_description, 5, all_titles, read_isbns, all_isbns)
@@ -289,6 +289,44 @@ def recommendation_view(request):
     table = BookTable(book_suggestions)
     context["table"] = table
     return render(request, "libraryaccess/recommend.html", context)
+
+def recommendation_view2(request):
+    context = {}
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    read_books = request.user.studentBook.all()
+    not_in_lib = request.user.studentBook.all().filter(inLibrary = False)
+    not_in_lib_isbns = list(not_in_lib.values_list('ISBN', flat=True))
+    not_in_lib_descriptions = list(not_in_lib.values_list('description', flat=True))
+    not_in_lib_genres = [' '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))]) for book in not_in_lib]
+    not_in_lib_titles = list(not_in_lib.values_list('title', flat=True))
+    read_isbns = list(read_books.values_list('ISBN', flat=True))
+    with open('libraryaccess/recommendation_info.csv') as reading_info:
+        csv_reader = csv.reader(reading_info, delimiter=',')
+        for i, l in enumerate(csv_reader):
+            if i == 0:
+                isbns = l
+            elif i == 1:
+                descriptions = l
+            elif i == 2:
+                titles = l
+            else:
+                genres = l
+    all_isbns = isbns+not_in_lib_isbns
+    all_descriptions = descriptions+not_in_lib_descriptions
+    all_genres = genres+not_in_lib_genres
+    all_titles = titles+not_in_lib_titles
+
+    result_isbns_description = recommend_by_description(all_descriptions, all_isbns, read_isbns, 100)
+    result_isbns_genre = recommend_by_genre(all_genres, all_isbns, read_isbns, 100)
+    result_isbns = combined_recommendation(result_isbns_genre, result_isbns_description, 5, all_titles, read_isbns, all_isbns)
+    book_suggestions = Book.objects.filter(ISBN__in=result_isbns)
+    table = BookTable(book_suggestions)
+    context["table"] = table
+    return render(request, "libraryaccess/recommend.html", context)
+
+
 
 
 def remove_book_view(request, isbn):

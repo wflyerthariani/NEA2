@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_tables2',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +135,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'library.access.reset@gmail.com'
 EMAIL_HOST_PASSWORD = 'testing2637'
 EMAIL_USE_TLS = True
+
+#Setting up regular cron jobs
+CRONJOBS = [
+    ('0 */2 * * *', 'libraryaccess.cron.my_cron_job')
+]
