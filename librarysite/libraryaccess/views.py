@@ -160,7 +160,6 @@ def book_view(request, isbn):
     #Attempts to get book from isbn in url
     #If object is not found a 404 error is returned
     book = get_object_or_404(Book, ISBN=str(isbn))
-
     #If the user is logged in they have the option to add the book to their list
     #If the user has already added it, the 'added' value changes to prevent readding
     #If the 'added' value is 'added' then the button will be deactivated
@@ -268,42 +267,27 @@ def book_search(request):
     context["table"] = table
     return render(request, "libraryaccess/booksearch.html", context)
 
-#View for seeing a student's recommendations
-def recommendation_view(request):
-    context = {}
-    if not request.user.is_authenticated:
-        return redirect("login")
-
-    books_in_library = Book.objects.all().filter(inLibrary = True)
-    read_books = request.user.studentBook.all()
-    all_books = books_in_library | read_books
-    all_isbns = list(all_books.values_list('ISBN', flat=True))
-    all_descriptions = list(all_books.values_list('description', flat=True))
-    all_genres = [' '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))]) for book in all_books]
-    all_titles = list(all_books.values_list('title', flat=True))
-    read_isbns = list(read_books.values_list('ISBN', flat=True))
-    result_isbns_description = recommend_by_description(all_descriptions, all_isbns, read_isbns, 100)
-    result_isbns_genre = recommend_by_genre(all_genres, all_isbns, read_isbns, 100)
-    result_isbns = combined_recommendation(result_isbns_genre, result_isbns_description, 5, all_titles, read_isbns, all_isbns)
-    book_suggestions = Book.objects.filter(ISBN__in=result_isbns)
-    table = BookTable(book_suggestions)
-    context["table"] = table
-    return render(request, "libraryaccess/recommend.html", context)
-
+#View for seeing a students recommendations
 def recommendation_view2(request):
+    #Requires user to be logged in otherwise user is redirected to login page
     context = {}
     if not request.user.is_authenticated:
         return redirect("login")
-
+    #The books read by the student are obtained as objects
     read_books = request.user.studentBook.all()
+    #The books not in the library are not stored in the csv
+    #This means all these books must have each attribute as a list
     not_in_lib = request.user.studentBook.all().filter(inLibrary = False)
     not_in_lib_isbns = list(not_in_lib.values_list('ISBN', flat=True))
     not_in_lib_descriptions = list(not_in_lib.values_list('description', flat=True))
     not_in_lib_genres = [' '.join([book.bookGenre.all()[i].name for i in range(len(book.bookGenre.all()))]) for book in not_in_lib]
     not_in_lib_titles = list(not_in_lib.values_list('title', flat=True))
+    #The respective isbns are used to pass into the recommendation algorithm
     read_isbns = list(read_books.values_list('ISBN', flat=True))
+    #The data for each book in the library is retrieved from the csv for speed
     with open('libraryaccess/recommendation_info.csv') as reading_info:
         csv_reader = csv.reader(reading_info, delimiter=',')
+        #Each line in the csv is a different attribute's list
         for i, l in enumerate(csv_reader):
             if i == 0:
                 isbns = l
@@ -313,62 +297,79 @@ def recommendation_view2(request):
                 titles = l
             else:
                 genres = l
+    #All the lists are joined to be processed simultaneously
     all_isbns = isbns+not_in_lib_isbns
     all_descriptions = descriptions+not_in_lib_descriptions
     all_genres = genres+not_in_lib_genres
     all_titles = titles+not_in_lib_titles
-
+    #The values are passed into the two recommendation algorithms
     result_isbns_description = recommend_by_description(all_descriptions, all_isbns, read_isbns, 100)
     result_isbns_genre = recommend_by_genre(all_genres, all_isbns, read_isbns, 100)
+    #The result of the algorithms are joined to obtain the best matches
     result_isbns = combined_recommendation(result_isbns_genre, result_isbns_description, 5, all_titles, read_isbns, all_isbns)
+    #The respective book objects are fetched using their isbn number
     book_suggestions = Book.objects.filter(ISBN__in=result_isbns)
+    #The books are passed into a table
     table = BookTable(book_suggestions)
     context["table"] = table
     return render(request, "libraryaccess/recommend.html", context)
 
-
-
-
+#View to remove a book from the reading list
+#Function takes in isbn as an argument passed in the url
 def remove_book_view(request, isbn):
+    #If the user is authenticated and have the book in their list, it is removed
     if request.user.is_authenticated:
         if request.user.studentBook.filter(ISBN = isbn):
             request.user.studentBook.filter(ISBN = isbn).delete()
+        #User is redirected to their reading list
         return redirect('myBooks')
+    #Otherwise the user is redirected to the home page
     else:
         return redirect('index')
 
-
+#View to see the most read books in the year group
 def year_group_view(request):
+    #First ensures that the user is logged in
     context = {}
     if not request.user.is_authenticated:
         return redirect("login")
-
+    #As inputting year group is optional, it has to be checked
     year_group = request.user.yearGroup
     if year_group == None:
         return redirect("account")
+    #If the user has input their year group, the entire year group is processed
     else:
+        #Number of students reading each book is counted
         students = Student.objects.all().filter(yearGroup = year_group)
         books = Book.objects.all()
         numbers = [book.student_set.all().count() for book in books]
+        #These numbers are enumerated so the isbns can be obtained after sorting
         enumerated_numbers = list(enumerate(numbers))
         sorted_numbers = sorted(enumerated_numbers, key=lambda x:x[1])
+        #If the number of results is more than 5, the top 5 are used
         if len(sorted_numbers) > 5:
             top_five = [item[0] for item in sorted_numbers[-5::]]
             top_five.reverse()
+        #If there are less than 5, all of them are used
         else:
             top_five = [item[0] for item in sorted_numbers]
             top_five.reverse()
+        #The book objects are added to the queryset
         queryset = []
         for index in top_five:
             queryset.append(books[index])
+        #A table is made from the result
         table = BookTable(queryset)
         RequestConfig(request).configure(table)
         context["table"] = table
         return render(request, "libraryaccess/yeargroup.html", context)
 
+#View to search for other students
 def student_search_view(request):
     context = {}
+    #Sets the queryset to include all students
     queryset = Student.objects.all()
+    #If the user inputs names, the queryset is filtered to include them
     if request.POST:
         Forename = request.POST.get("Forename", "")
         Surname = request.POST.get("Surname", "")
@@ -376,41 +377,54 @@ def student_search_view(request):
             queryset = queryset.filter(forename = Forename)
         if len(Surname) > 0:
             queryset = queryset.filter(surname = Surname)
-
+    #The resulting data is passed into table which links to student_view
     table = StudentTable(queryset)
     RequestConfig(request).configure(table)
     context["table"] = table
     return render(request, "libraryaccess/studentsearch.html", context)
 
+#View for seeing another student's reading
 def student_view(request, ID):
+    #Uses the id number passed into the url to get a student object
     context = {}
     student = get_object_or_404(Student, pk=int(ID))
-
+    #Finds both the forename and surname of the student from the object
+    #This is put in the context so it can be displayed
     context["forename"] = (student.forename).capitalize()
     context["surname"] = (student.surname).capitalize()
-
+    #If the student agrees to share their books then a queryset of books is made
     if student.book_share == True:
         queryset = student.studentBook.all()
     else:
         queryset = []
+    #The wuery set is put in a book table and returned
     table = BookTable(queryset)
     RequestConfig(request).configure(table)
     context["table"] = table
     return render(request, "libraryaccess/studentview.html", context)
 
+#View to add a new book that is not in the library
 def add_new_book_view(request):
+    #Creates an error key in the context to return if there is an error
     context = {"error":''}
+    #Takes the isbn that has been input
     if request.POST:
         isbn = request.POST.get("ISBN", "")
+        #Tries to use the function I created to use google books to get data
         try:
             Title, Authors, publishedDate, Description, Genres = get_details(str(isbn))
         except:
+            #If the function is unsuccessful the following error is used
             context["error"] = 'Book Details Not Found'
             return render(request, "libraryaccess/bookadd.html", context)
+        #if the book is already in the library it returns another error
         if isbn in Book.objects.values_list('ISBN', flat=True):
             context["error"] = 'Book already in library'
             return render(request, "libraryaccess/bookadd.html", context)
+        #Uses django get or create to ensure no errrors when creating object
         newbook, created = Book.objects.get_or_create(ISBN = isbn, publishDate = int(publishedDate), title = Title, description = Description, inLibrary = False)
+        #Adds each author and genre individually
+        #First checks if author or genre exists and gets it or creates it
         for author in Authors:
             authorname = author.split(' ')
             newauthor, created = Author.objects.get_or_create(forename = ' '.join([authorname[i].lower().capitalize() for i in range(len(authorname)-1)]), surname = authorname[-1].lower().capitalize())
@@ -421,13 +435,16 @@ def add_new_book_view(request):
             newbook.bookGenre.add(newgenre)
             newbook.save()
         newbook.save()
+        #If the user is logged in the book is added to their reading list
         if request.user.is_authenticated:
             request.user.studentBook.add(newbook)
         return redirect('index')
     else:
         return render(request, "libraryaccess/bookadd.html", context)
 
+#View for logging in with an admin passowrd to activate the register
 def confirm_register_view(request):
+    #Takes the password and compares it to admin accounts
     context = {"error":''}
     if request.POST:
         valid = False
@@ -436,6 +453,8 @@ def confirm_register_view(request):
         for comparison in comparisons.values_list('password', flat=True):
             if check_password(password, comparison):
                 valid = True
+        #If password is valid, session variable is changed to true
+        #This prevents user from being logged in so students cant access admin
         if valid:
             request.session['valid_register'] = True
             return redirect("libraryRegister")
@@ -444,45 +463,60 @@ def confirm_register_view(request):
             request.session['valid_register'] = False
     return render(request, "libraryaccess/confirmreg.html", context)
 
+#View for the library register
 def register_view(request):
+    #First the session variable is checked and the user is logged out
     if 'valid_register' in request.session:
         if request.session['valid_register']:
             logout(request)
             request.session['valid_register'] = True
             context = {'error':''}
+            #When either the login fields are submitted or a card is scanned
             if request.POST:
                 form = AccountAuthenticationForm()
                 code = request.POST.get("cardScan", "")
+                #First the lenght of the input card UID is checked
+                #If there is no card, the login fields are used
                 if len(code) <= 0:
                     email = request.POST['email']
                     password = request.POST['password']
                     user = authenticate(email=email, password=password)
-
+                    #If a user is found, their registers for the day are checked
                     if user:
                         start_date = timezone.now().date()
                         end_date = start_date + datetime.timedelta(days=1)
                         user_registers = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+                        #If the user hasn't been registered on the day
+                        #Creates a new register
                         if len(user_registers) == 0:
                             new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
                             new_register.save()
                             context['error'] = (user.forename.capitalize()+' has been signed in.')
+                        #If there is a register for the day
                         else:
+                            #Checks if the latest register has a sign out time
                             latest_register = user_registers.latest('signinTime')
                             if latest_register.signoutTime == None:
+                                #Sets the signout time to the current time
                                 latest_register.signoutTime = timezone.now()
                                 latest_register.save()
                                 context['error'] = (user.forename.capitalize()+' has been signed out.')
+                            #Otherwise creates a new register
                             else:
                                 new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
                                 new_register.save()
                                 context['error'] = (user.forename.capitalize()+' has been signed in.')
+                    #If the input fields are not valid an error is returned
                     else:
                         context['error'] = 'Invalid login'
-
+                #If it does not have a typed input it checks the card scanned
+                #Card is deemed valid if the code is 8 characters
                 else:
                     if len(code) == 8:
-                        if len(Student.objects.raw('SELECT * FROM libraryaccess_Student WHERE libraryaccess_Student.cardUID = %s', [code])) == 0:
+                        #Determines if an account is associated with it
+                        if len(Student.objects.all().filter(cardUID=code)) == 0:
                             context['error'] = 'No account associated with this card'
+                        #Same process as above is sued to add to the register
                         else:
                             user = Student.objects.get(cardUID = code)
                             start_date = timezone.now().date()
@@ -502,29 +536,37 @@ def register_view(request):
                                     new_register = StudentRegister(ID=user, signinTime=timezone.now(), signoutTime=None)
                                     new_register.save()
                                     context['error'] = (user.forename.capitalize()+' has been signed in.')
-
+                    #Errors returned for different situations
                     elif len(code) > 0:
                         context['error'] = 'Invalid Card'
                     else:
                         context['error'] = 'User not found, try again'
-
+            #Uses authentication form like login for error generation
             else:
                 form = AccountAuthenticationForm()
 
             context['login_form'] = form
             return render(request, 'libraryaccess/register.html', context)
+    #If the register was not confirmed user is redirected
     return redirect('confirm_register')
 
+#View to redirect user to home after closing register and changing session
 def close_register(request):
     request.session['valid_register'] = False
     return redirect('index')
 
+#Only allows admin to access this view
+#View to send email with register of students to school Admin
+#Email can be changed for future use
 @user_passes_test(lambda u: u.is_admin)
 def mail_register(request):
+    #Selects all registers for current day
     start_date = timezone.now().date()
     end_date = start_date + datetime.timedelta(days=1)
     queryset = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+    #Gets list of forenames and surnames to append to email before sending
     names = list(set(queryset.values_list('ID__surname', 'ID__forename')))
     names = '\n'.join([j.capitalize()+' '+i.capitalize() for (i, j) in names])
     send_mail('Library Register', 'The following students have been registered today:\n'+names, None, ['wflyerthariani@gmail.com'])
+    #Redirects user to home page
     return redirect('index')
