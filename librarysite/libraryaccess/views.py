@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from libraryaccess.get_info_from_isbn import get_imagelink, get_details
-from libraryaccess.tables import BookTable, MyBookTable, StudentTable
+from libraryaccess.tables import BookTable, MyBookTable, StudentTable, RegisterTable
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from libraryaccess.vectoriser import recommend_by_description, recommend_by_genre, combined_recommendation
@@ -570,3 +570,20 @@ def mail_register(request):
     send_mail('Library Register', 'The following students have been registered today:\n'+names, None, ['wflyerthariani@gmail.com'])
     #Redirects user to home page
     return redirect('index')
+
+#Similar to above, this is only visible to the admin
+#View to show librarian students currently in the library
+@user_passes_test(lambda u: u.is_admin)
+def admin_register_view(request):
+    context = {}
+    #Obtains all students signing in on the day
+    start_date = timezone.now().date()
+    end_date = start_date + datetime.timedelta(days=1)
+    queryset = StudentRegister.objects.all().filter(signinTime__range=(start_date, end_date))
+    #Filters those that have not signed out yet
+    queryset = queryset.filter(signoutTime = None)
+    #Puts the data in a table to display tot he librarian
+    table = RegisterTable(queryset)
+    RequestConfig(request).configure(table)
+    context["table"] = table
+    return render(request, 'libraryaccess/adminregister.html', context)

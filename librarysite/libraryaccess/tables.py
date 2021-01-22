@@ -1,5 +1,5 @@
 import django_tables2 as tables
-from libraryaccess.models import Student, Author, Genre, Book
+from libraryaccess.models import Student, Author, Genre, StudentRegister, Book
 
 class BookTable(tables.Table):
     all_authors = tables.Column(verbose_name='Authors', order_by=("bookAuthor.surname"))
@@ -21,3 +21,9 @@ class StudentTable(tables.Table):
     class Meta:
         model = Student
         fields = ['forename', 'surname']
+
+class RegisterTable(tables.Table):
+    signinTime = tables.Column(verbose_name='Sign in')
+    class Meta:
+        model = StudentRegister
+        fields = ['ID.forename', 'ID.surname', 'signinTime']
