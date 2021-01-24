@@ -1,5 +1,15 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<p>Welcome to the home page</p>
+<h2>Welcome to the home page</h2>
+<p>Click on the book search option to search for books to read</p>
+{% if user.is_authenticated %}
+<p>Click on the Account drop down to log out, update your account or change the id card associated with your account</p>
+<p>Click on the Social drop down to search for your friends or look at your year group's favourite books</p>
+<p>Click on the My Reading drop down to view the books you have added, add a book that you cannot find in the library and to see your book recommendations</p>
+{% else %}
+<p>To log in you can choose to do so using your card or your credentials</p>
+<p>If you have forgotten your password please click Forgot Password</p>
+<p>To create a new account press Sign Up</p>
+{% endif %}
 {% endblock content %}

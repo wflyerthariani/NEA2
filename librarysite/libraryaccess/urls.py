@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from . import views
 
+#Matches URLS to the view and assigns a name for reference in views file
 urlpatterns = [
     path('', views.index, name='index'),
     path('register/', views.registration_view, name='registration'),
