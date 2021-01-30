@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
 <h2>Account</h2>
 <form method='post'>{% csrf_token %}
   {% for field in account_form %}
@@ -28,5 +27,4 @@
   {% endif %}
   <button type="submit">Update</button>
 </form>
-
 {% endblock content %}

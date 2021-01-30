@@ -3,6 +3,7 @@
 {% block content %}
 <form method="POST" id="cardScanForm">
   {% csrf_token %}
+  <p>Scan your card</p>
   <input type="hidden" name="cardScan" id="cardScan">
   <p style="color: red;">{{error}}</p>
 </form>
@@ -412,7 +413,7 @@
   	return onScan;
   })));
 
-  // Initialize with options
+  // Initialize with options and submit
 onScan.attachTo(document, {
     suffixKeyCodes: [13], // enter-key expected at the end of a scan
     reactToPaste: false, // Compatibility to built-in scanners in paste-mode (as opposed to keyboard-mode)
@@ -420,7 +421,7 @@ onScan.attachTo(document, {
         document.getElementById("cardScan").value = sCode;
         document.getElementById("cardScanForm").submit();
     },
-    //onKeyDetect: function(iKeyCode){ // output all potentially relevant key events - great for debugging!
+    //onKeyDetect: function(iKeyCode){ // output all potentially relevant key events for debugging or scanner change
         //console.log('Pressed: ' + iKeyCode);
     //}
 });
